@@ -5,7 +5,7 @@ def split_nodes_delimiter(old_nodes):
     # If a TextNode contains different formatting (e.g.: italic text that is already bold), create child TextNode objects with their specific type defined
 
     # Check the delimiters, and get the defined type
-    valid_delimiters = ["**", "__", "*", "_", "~~", "`"]    
+    valid_delimiters = ["*", "_", "~", "`"]    
     textnode_type = lambda delimiter: {
         "" : "text",
         "**" : "bold",
@@ -25,11 +25,15 @@ def split_nodes_delimiter(old_nodes):
         used_delimiters = []
         # For bold and italic text, check the next and previous indices, so that you dont add italic delimiters for bold text for example
         for i in range(0, len(node.text)):
+            # If the character is not in valid delimiter characters, skip
+            if node.text[i] not in valid_delimiters:
+                continue
+            # If the character is already in the used delimiter list, skip
+            elif node.text[i] in valid_delimiters and node.text[i] in used_delimiters:
+                continue
             # Doble character delimiter checks break operation - if special formatting is at the end of node
             # Since we don't need them (as we have already checked the opening delimiter - and they're unique), we can skip the check
-            if i == len(node.text) - 1:
-                continue
-            else:
+            elif node.text[i] in valid_delimiters and not node.text[i] in used_delimiters and not i == len(node.text) - 1:
                 if node.text[i] == "*" and node.text[i+1] == "*":
                     used_delimiters.append("**")
                 elif node.text[i] == "*" and not (node.text[i+1] == "*" or node.text[i-1] == "*"):
@@ -42,8 +46,8 @@ def split_nodes_delimiter(old_nodes):
                     used_delimiters.append("~~")               
                 elif node.text[i] == "`":
                     used_delimiters.append("`")
-                else:
-                    continue    
+            else:
+                continue    
 
         if len(used_delimiters) == 0:
             return False
@@ -92,4 +96,6 @@ def split_nodes_delimiter(old_nodes):
                                 # Either way, when we are done adding the previous child part, the next one type will be opposite than the previous part
                                 special_format = not special_format
 
+    print(used_delimiters)
+    print(new_nodes)
     return new_nodes
