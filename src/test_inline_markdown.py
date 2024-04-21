@@ -1,10 +1,10 @@
 import unittest
 
-from inline_markdown import split_nodes_delimiter
+from inline_markdown import split_nodes_delimiter, extract_markdown_images, extract_markdown_links
 from textnode import TextNode
 
 
-class TestInlineMarkdown(unittest.TestCase):
+class TestInlineMarkdownDelimiter(unittest.TestCase):
     def test_delimiter_bold(self):
         node = TextNode("This is text with a **bolded** word", "text")
         new_nodes = split_nodes_delimiter([node])
@@ -103,4 +103,17 @@ class TestInlineMarkdown(unittest.TestCase):
             ],
             new_nodes
         )
+
     
+class TestInnlineMarkdownImage(unittest.TestCase):
+    def test_extract_markdown_image(self):
+        text = "This is text with an ![image](https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/zjjcJKZ.png) and ![another](https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/dfsdkjfd.png)"
+        desired_result = [('image', 'https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/zjjcJKZ.png'), ('another', 'https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/dfsdkjfd.png')]
+        self.assertListEqual(extract_markdown_images(text), desired_result)
+
+
+class TestInlineMarkdownLink(unittest.TestCase):
+    def test_extract_markdown_link(self):
+        text = "This is text with a [link](https://www.example.com) and [another](https://www.example.com/another)"
+        desired_result = [('link', 'https://www.example.com'), ('another', 'https://www.example.com/another')]
+        self.assertListEqual(extract_markdown_links(text), desired_result)

@@ -1,21 +1,13 @@
-from textnode import TextNode
-from inline_markdown import split_nodes_delimiter
+from inline_markdown import extract_markdown_images, extract_markdown_links
 
 
 
 def main():
-    node1 = TextNode("This is text with a **bolded** word", "text")
-    node2 = TextNode("This is text with a *italic* word", "text")
-    node3 = TextNode("This is a text with no special syntax", "text")
-    node4 = TextNode("This is text with a ~~striketrough~~ word", "text")
+    text1 = "This is text with an ![image](https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/zjjcJKZ.png) and ![another](https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/dfsdkjfd.png)"
+    text2 = "This is text with a [link](https://www.example.com) and [another](https://www.example.com/another)"
 
-    split_nodes_delimiter([node1])
-    print("#####################")
-    split_nodes_delimiter([node2])
-    print("#####################")
-    split_nodes_delimiter([node1, node2])
-    print("#####################")
-    split_nodes_delimiter([node4])
+    print(extract_markdown_images(text1))
+    print(extract_markdown_links(text2))
 
 
 main()

@@ -1,3 +1,5 @@
+import re
+
 from textnode import TextNode
 
 
@@ -14,8 +16,6 @@ def split_nodes_delimiter(old_nodes):
         "_" : "italic",
         "~~" : "striketrough",
         "`" : "code",
-        #"[title]" : "link",
-        #"!" : "image"
     }.get(delimiter, "Unknown")
 
     new_nodes = []
@@ -96,6 +96,37 @@ def split_nodes_delimiter(old_nodes):
                                 # Either way, when we are done adding the previous child part, the next one type will be opposite than the previous part
                                 special_format = not special_format
 
-    print(used_delimiters)
-    print(new_nodes)
+
     return new_nodes
+
+
+
+def extract_markdown_images(text):
+    '''
+    Takes raw text and returns a list of tuples. 
+    Each tuple should contain the alt text and the URL of any markdown images. 
+    
+    For example:
+    text = "This is text with an ![image](https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/zjjcJKZ.png) and ![another](https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/dfsdkjfd.png)"
+    
+    print(extract_markdown_images(text))
+    # [("image", "https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/zjjcJKZ.png"), ("another", "https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/dfsdkjfd.png")]
+    '''
+
+    image_data = re.findall(r"!\[(.*?)\]\((.*?)\)", text)
+    return list(image_data)
+
+def extract_markdown_links(text):
+    '''
+    This one should extract markdown links instead of images.
+    It should return tuples of anchor text and URLs. 
+    
+    For example:
+    text = "This is text with a [link](https://www.example.com) and [another](https://www.example.com/another)"
+    
+    print(extract_markdown_links(text))
+    # [("link", "https://www.example.com"), ("another", "https://www.example.com/another")]
+    '''
+
+    link_data = re.findall(r"\[(.*?)\]\((.*?)\)", text)
+    return list(link_data)
