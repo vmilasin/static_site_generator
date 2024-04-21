@@ -11,13 +11,13 @@ class TextNode:
     self.url - The URL of the link or image, if the text is a link. Default to None if nothing is passed in.
 
     '''
-    def __init__(self, text, text_type, url):
+    def __init__(self, text, text_type, url=None):
         if not isinstance(text, str):
             raise TypeError("Text must be a string")
         if not isinstance(text_type, str):
             raise TypeError("Text type must be a string")
-        if not isinstance(url, str):
-            raise TypeError("URL must be a string")
+        if text_type == "link" and not isinstance(url, str):
+            raise TypeError("Text type link must have a URL value that must be a string")
         
         self.text = text
         self.text_type = text_type

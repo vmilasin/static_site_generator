@@ -23,15 +23,36 @@ def split_nodes_delimiter(old_nodes):
     # Mechanism to check if a node contains any valid delimiters and return a sorted list by occurance in TextNode.text
     def check_nodes_for_delimiters(node):
         used_delimiters = []
-        for valid_delimiter in valid_delimiters:
-            if valid_delimiter in node.text:
-                used_delimiters.append(valid_delimiter)
+        # For bold and italic text, check the next and previous indices, so that you dont add italic delimiters for bold text for example
+        for i in range(0, len(node.text)):
+            # Doble character delimiter checks break operation - if special formatting is at the end of node
+            # Since we don't need them (as we have already checked the opening delimiter - and they're unique), we can skip the check
+            if i == len(node.text) - 1:
+                continue
+            else:
+                if node.text[i] == "*" and node.text[i+1] == "*":
+                    used_delimiters.append("**")
+                elif node.text[i] == "*" and not (node.text[i+1] == "*" or node.text[i-1] == "*"):
+                    used_delimiters.append("*")
+                elif node.text[i] == "_" and node.text[i+1] == "_":
+                    used_delimiters.append("__")
+                elif node.text[i] == "_" and not (node.text[i+1] == "_" or node.text[i-1] == "_"):
+                    used_delimiters.append("_") 
+                elif node.text[i] == "~" and node.text[i+1] == "~":
+                    used_delimiters.append("~~")               
+                elif node.text[i] == "`":
+                    used_delimiters.append("`")
+                else:
+                    continue    
 
         if len(used_delimiters) == 0:
             return False
         
         else:
-            used_delimiters = sorted(used_delimiters, key=lambda x: node.text.index(x))                
+            used_delimiters = sorted(used_delimiters, key=lambda x: node.text.index(x))
+            # We need to iterate over the used delimiters only once
+            # Closing delimiters in the text would cause multiple additions to our result
+            used_delimiters = set(used_delimiters)               
             return used_delimiters
 
     # Iterate over all TextNodes in old_nodes

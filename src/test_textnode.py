@@ -17,8 +17,12 @@ class TestTextNode(unittest.TestCase):
             node1 = TextNode("This is a text node", None, "https://www.google.com")
 
     def test_attributes_url(self):
+        node1 = TextNode("This is a text node", "bold")
+        self.assertIsInstance(node1, TextNode)            
+    
+    def test_attributes_url(self):
         with self.assertRaises(TypeError):
-            node1 = TextNode("This is a text node", "bold", None)
+            node1 = TextNode("This is a text node", "link", None)
 
     def test_eq(self):
         node1 = TextNode("This is a text node", "bold", "https://www.google.com")
