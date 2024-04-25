@@ -100,4 +100,319 @@ def split_code(old_nodes=old_nodes, delimiter=delimiter, alt_type=alternate_type
         result.extend(node.text)
 
 
-'''
+
+
+
+
+
+
+def split_nodes_delimiter(old_nodes):
+    # If a TextNode contains different formatting (e.g.: italic text that is already bold), create child TextNode objects with their specific type defined
+
+    # Check the delimiters, and get the defined type
+    valid_delimiters = ["*", "_", "~", "`"]    
+    textnode_type = lambda delimiter: {
+        "" : "text",
+        "**" : "bold",
+        "__": "bold",
+        "*" : "italic",
+        "_" : "italic",
+        "~~" : "striketrough",
+        "`" : "code",
+    }.get(delimiter, "Unknown")
+
+    new_nodes = []
+
+    # Mechanism to check if a node contains any valid delimiters and return a sorted list by occurance in TextNode.text
+    def check_nodes_for_delimiters(node):
+        used_delimiters = []
+        # For bold and italic text, check the next and previous indices, so that you dont add italic delimiters for bold text for example
+        for i in range(0, len(node.text)):
+            # If the character is not in valid delimiter characters, skip
+            if node.text[i] not in valid_delimiters:
+                continue
+            # If the character is already in the used delimiter list, skip
+            elif node.text[i] in valid_delimiters and (node.text[i] in used_delimiters or ( not i == len(node.text) - 1 and node.text[i]+node.text[i+1] in used_delimiters)) :
+                continue
+            # Doble character delimiter checks break operation - if special formatting is at the end of node
+            # Since we don't need them (as we have already checked the opening delimiter - and they're unique), we can skip the check
+            elif node.text[i] in valid_delimiters and not node.text[i] in used_delimiters and not i == len(node.text) - 1:
+                if node.text[i] == "*" and node.text[i+1] == "*":
+                    used_delimiters.append("**")
+                elif node.text[i] == "*" and not (node.text[i+1] == "*" or node.text[i-1] == "*"):
+                    used_delimiters.append("*")
+                elif node.text[i] == "_" and node.text[i+1] == "_":
+                    used_delimiters.append("__")
+                elif node.text[i] == "_" and not (node.text[i+1] == "_" or node.text[i-1] == "_"):
+                    used_delimiters.append("_") 
+                elif node.text[i] == "~" and node.text[i+1] == "~":
+                    used_delimiters.append("~~")               
+                elif node.text[i] == "`":
+                    used_delimiters.append("`")
+            else:
+                continue    
+
+        if len(used_delimiters) == 0:
+            return False
+        
+        else:
+            used_delimiters = sorted(used_delimiters, key=lambda x: node.text.index(x))
+            # We need to iterate over the used delimiters only once
+            # Closing delimiters in the text would cause multiple additions to our result
+            used_delimiters = set(used_delimiters)               
+            return used_delimiters
+
+    # Iterate over all TextNodes in old_nodes
+    for node in old_nodes:
+        node_text = node.text
+        node_type = node.text_type
+        used_delimiters = check_nodes_for_delimiters(node)
+
+        if not used_delimiters:
+            # If no delimiters were found in the node, just append it to new_nodes as-is
+            new_nodes.append(node)
+        
+        else:
+
+            print(used_delimiters)
+
+            # Otherwise, split the node and append its children
+            for delimiter in used_delimiters:                
+                # If the special formatting isn't closed, raise an error
+                if node_text.count(delimiter) % 2 != 0:
+                    raise ValueError(f"Unmatched delimiter {delimiter} found")
+                
+                else:
+                    children = node_text.split(delimiter)
+                    # First part of text is of the default type
+                    special_format = False
+                            
+                    for child in children:
+                        # Check if the child segment contains text
+                        if child:
+                            # If the child is of the default type, just add it to new_nodes as-is
+                            if not special_format:
+                                new_nodes.append(TextNode(child, node_type))
+                            # Otherwise, add the child to new_nodes with its respective type
+                            else:
+                                new_nodes.append(TextNode(child, textnode_type(delimiter)))
+                            # We are either adding default type text, or we have come to the special type text that needs to be reformatted
+                            # Either way, when we are done adding the previous child part, the next one type will be opposite than the previous part
+                            special_format = not special_format
+
+
+    return new_nodes
+
+
+
+    
+    
+    
+    
+def split_nodes_delimiter(old_nodes):
+    
+    # If a TextNode contains different formatting (e.g.: italic text that is already bold), create child TextNode objects with their specific type defined
+
+    # Check the delimiters, and get the defined type
+    valid_delimiters = ["*", "_", "~", "`"]    
+    textnode_type = lambda delimiter: {
+        "" : "text",
+        "**" : "bold",
+        "__": "bold",
+        "*" : "italic",
+        "_" : "italic",
+        "~~" : "striketrough",
+        "`" : "code",
+    }.get(delimiter, "Unknown")
+
+
+    # Mechanism to check if a node contains any valid delimiters and return a sorted list by occurance in TextNode.text
+    def check_nodes_for_delimiters(node):
+        used_delimiters = []
+        node_lenght = len(node.text)
+        # For bold and italic text, check the next and previous indices, so that you dont add italic delimiters for bold text for example
+        for i in range(0, node_lenght):
+            # If the character is not in valid delimiter characters, skip
+            if node.text[i] not in valid_delimiters:
+                continue
+            # Otherwise add to list of used delimiters (mind the double characters)
+            # Doble character delimiter checks break operation - if special formatting is at the end of node
+            # Since we don't need them (as we have already checked the opening delimiter - and they're unique), we can skip the check
+            elif node.text[i] in valid_delimiters and not (i == node_lenght - 1 or i == node_lenght -2):
+                if (node.text[i] == "*" and node.text[i+1] == "*") and not (node.text[i+2] == "*" and node.text[i-2] == "*"):
+                    used_delimiters.append("**")
+                elif node.text[i] == "*" and not (node.text[i+1] == "*" or node.text[i-1] == "*"):
+                    used_delimiters.append("*")
+                elif node.text[i] == "_" and node.text[i+1] == "_":
+                    used_delimiters.append("__")
+                elif node.text[i] == "_" and not (node.text[i+1] == "_" or node.text[i-1] == "_"):
+                    used_delimiters.append("_") 
+                elif node.text[i] == "~" and node.text[i+1] == "~":
+                    used_delimiters.append("~~")               
+                elif node.text[i] == "`":
+                    used_delimiters.append("`")
+            else:
+                continue
+        if len(used_delimiters) == 0:
+            return False        
+        else:              
+            return used_delimiters
+
+   
+    def get_next_delimiter(index, children, transversal_complete, consecutive_node, used_delimiters, last_delimiter):
+        
+        Function to calculate the next delimiter for node formatting - takes in:
+            - index of the delimiter being formatted now in the delimiter list
+            - a list of current childs parents
+            - list of used delimiters
+            - the last delimiter used for slicing
+
+        The function returns:
+            - next delimiters index
+            - a list of current childs parents
+            - the next delimiter to bue used for slicing
+            - the next delimiters length
+            - the type of textnode format on the next slice - closing delimiters don't return special format, but default text
+        
+        for i in range(index, len(used_delimiters)):
+            next_delimiter = used_delimiters[i]
+            delimiter_length = len(next_delimiter)
+            next_delimiter_type = textnode_type(next_delimiter)
+            if i == len(used_delimiters) - 1:
+                future_delimiter = "text"                
+            else:
+                future_delimiter = used_delimiters[i+1]
+
+            if last_delimiter == next_delimiter == future_delimiter:
+                consecutive_node = not consecutive_node
+            
+            if next_delimiter == future_delimiter:
+                # If the future delimiter in the list is the same as the next one, that means that the next one
+                # is an opening delimiter, and should format the node accordingly
+                if not consecutive_node:                  
+                    index += 1
+                    return index, children, transversal_complete, consecutive_node, next_delimiter, delimiter_length, "text"
+                else:
+                    index += 1
+                    return index, children, transversal_complete, consecutive_node, next_delimiter, delimiter_length, next_delimiter_type      
+            
+            elif next_delimiter == last_delimiter:
+                # If the next delimiter in the list is the same as the last one, that means that it
+                # is a closing delimiter, and should format the rest of the node as basic text
+                if children == 0:                                       
+                    index += 1
+                    return index, children, transversal_complete, consecutive_node, next_delimiter, delimiter_length, next_delimiter_type
+                else:
+                    # If the node is nested, we need to set a flag to close the subnode, otherwise we would just
+                    # end up adding new child nodes
+                    children -= 1
+                    transversal_complete = False 
+                    return index, children, transversal_complete, consecutive_node, next_delimiter, delimiter_length, next_delimiter_type
+
+            elif last_delimiter != next_delimiter != future_delimiter:
+                    # If the next delimiter is different than the last and future one, and has no children, that means it is
+                    # an opening parent, meaning we should format the text accordingly, and increase the level of child nodes we entered
+                    if transversal_complete == True:                        
+                        index += 1
+                        children += 1
+                        return index, children, transversal_complete, consecutive_node, next_delimiter, delimiter_length, "text"
+                    # If the next delimiter is different than the last and future one, and has children, that means it is a closing
+                    # parent, meaning we should format the rest as text, and reduce the current level of child nodes we entered
+                    else:
+                        # If there are no children left, that means we have come to the end of the parent node containing subnodes,
+                        # so we should flag the child node transversal complete and return basic text after
+                        if children == 0:
+                            index += 1
+                            transversal_complete = True
+                            return index, children, transversal_complete, consecutive_node, next_delimiter, delimiter_length, next_delimiter_type
+                        # Otherwise, reduce the children level
+                        else:
+                            index += 1
+                            children -= 1
+                            return index, children, transversal_complete, consecutive_node, next_delimiter, delimiter_length, next_delimiter_type
+
+    
+    new_nodes = []
+    
+    # Iterate over all TextNodes in old_nodes
+    for node in old_nodes:
+        node_text = node.text
+        used_delimiters = check_nodes_for_delimiters(node)
+
+        print(used_delimiters)
+
+        # If no delimiters were found in the node, just append it to new_nodes as-is
+        if not used_delimiters:                
+            new_nodes.append(node)  
+
+        else:
+            # Check if there are any unclosed delimiters
+            for delimiter in used_delimiters:
+                if used_delimiters.count(delimiter) % 2 != 0:
+                    raise ValueError(f"Unmatched delimiter {delimiter} found")          
+            
+            
+            # Define index for node slicing
+            starting_index = 0
+
+            # Get starting index for delimiter list checking
+            delimiter_starting_index = 0
+            delimiter_children = 0
+            last_delimiter = "text"
+            transversal_complete = True
+            consecutive_node = False
+            number_of_delimiters = int(len(used_delimiters))               
+
+            for i in range(0, number_of_delimiters):
+                # Get the next delimiter, and configure indexing to iterate over next delimiters
+                next_delimiter = get_next_delimiter(delimiter_starting_index, delimiter_children, transversal_complete, consecutive_node, used_delimiters, last_delimiter)
+                delimiter_starting_index = next_delimiter[0]
+                delimiter_children = next_delimiter[1]
+                transversal_complete = next_delimiter[2]
+                consecutive_node = next_delimiter[3]
+                delimiter_value = next_delimiter[4]
+                delimiter_length = next_delimiter[5]
+                next_textnode_type = next_delimiter[6]
+
+
+                # Split the node text on the next delimiter starting from the starting index
+                node_children = node_text[starting_index:].split(delimiter_value, maxsplit=1)
+                print(node_children)
+                print(delimiter_value)
+                print(next_textnode_type)
+                
+                
+                for child in node_children:
+                        if child:
+                            new_nodes.append(TextNode(child, next_textnode_type))
+                            starting_index += len(node_text[starting_index:].split(delimiter_value, maxsplit=1))
+                        
+                        
+                            
+    print(new_nodes)
+    return new_nodes    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    '''

@@ -3,100 +3,34 @@ import re
 from textnode import TextNode
 
 
-def split_nodes_delimiter(old_nodes):
-    # If a TextNode contains different formatting (e.g.: italic text that is already bold), create child TextNode objects with their specific type defined
-
-    # Check the delimiters, and get the defined type
-    valid_delimiters = ["*", "_", "~", "`"]    
-    textnode_type = lambda delimiter: {
-        "" : "text",
-        "**" : "bold",
-        "__": "bold",
-        "*" : "italic",
-        "_" : "italic",
-        "~~" : "striketrough",
-        "`" : "code",
-    }.get(delimiter, "Unknown")
-
+def split_nodes_delimiter(old_nodes, delimiter, text_type):
     new_nodes = []
-
-    # Mechanism to check if a node contains any valid delimiters and return a sorted list by occurance in TextNode.text
-    def check_nodes_for_delimiters(node):
-        used_delimiters = []
-        # For bold and italic text, check the next and previous indices, so that you dont add italic delimiters for bold text for example
-        for i in range(0, len(node.text)):
-            # If the character is not in valid delimiter characters, skip
-            if node.text[i] not in valid_delimiters:
-                continue
-            # If the character is already in the used delimiter list, skip
-            elif node.text[i] in valid_delimiters and node.text[i] in used_delimiters:
-                continue
-            # Doble character delimiter checks break operation - if special formatting is at the end of node
-            # Since we don't need them (as we have already checked the opening delimiter - and they're unique), we can skip the check
-            elif node.text[i] in valid_delimiters and not node.text[i] in used_delimiters and not i == len(node.text) - 1:
-                if node.text[i] == "*" and node.text[i+1] == "*":
-                    used_delimiters.append("**")
-                elif node.text[i] == "*" and not (node.text[i+1] == "*" or node.text[i-1] == "*"):
-                    used_delimiters.append("*")
-                elif node.text[i] == "_" and node.text[i+1] == "_":
-                    used_delimiters.append("__")
-                elif node.text[i] == "_" and not (node.text[i+1] == "_" or node.text[i-1] == "_"):
-                    used_delimiters.append("_") 
-                elif node.text[i] == "~" and node.text[i+1] == "~":
-                    used_delimiters.append("~~")               
-                elif node.text[i] == "`":
-                    used_delimiters.append("`")
-            else:
-                continue    
-
-        if len(used_delimiters) == 0:
-            return False
-        
-        else:
-            used_delimiters = sorted(used_delimiters, key=lambda x: node.text.index(x))
-            # We need to iterate over the used delimiters only once
-            # Closing delimiters in the text would cause multiple additions to our result
-            used_delimiters = set(used_delimiters)               
-            return used_delimiters
-
-    # Iterate over all TextNodes in old_nodes
+    
     for node in old_nodes:
-        node_text = node.text
-        node_type = node.text_type
-        used_delimiters = check_nodes_for_delimiters(node)
-
-        if not used_delimiters:
-            # If no delimiters were found in the node, just append it to new_nodes as-is
+        # If the node is a text node, just append it as-is
+        if node.text_type != "text":
             new_nodes.append(node)
+            continue
         
-        else:
-            # Otherwise, split the node and append its children
-            for delimiter in used_delimiters:                
-                if delimiter in node_text:
-                    
-                    # If the special formatting isn't closed, raise an error
-                    if node_text.count(delimiter) % 2 != 0:
-                        raise ValueError(f"Unmatched delimiter {delimiter} found")
-                    
-                    else:
-                        children = node_text.split(delimiter)
-                        # First part of text is of the default type
-                        special_format = False
-                            
-                        for child in children:
-                            # Check if the child segment contains text
-                            if child:
-                                # If the child is of the default type, just add it to new_nodes as-is
-                                if not special_format:
-                                    new_nodes.append(TextNode(child, node_type))
-                                # Otherwise, add the child to new_nodes with its respective type
-                                else:
-                                    new_nodes.append(TextNode(child, textnode_type(delimiter)))
-                                # We are either adding default type text, or we have come to the special type text that needs to be reformatted
-                                # Either way, when we are done adding the previous child part, the next one type will be opposite than the previous part
-                                special_format = not special_format
+        split_nodes = []
+        children = node.text.split(delimiter)
+        
+        # Raise a ValueError if there's a missing delimiter
+        if len(children) % 2 == 0:
+            raise ValueError(f"Invalid markdown, formatted {delimiter} section not closed")
+        
+        for i in range(len(children)):
+            # Skip nodes begining with a delimiter
+            if children[i] == "":
+                continue
+            # The node is split so that the first index (0) is text,
+            if i % 2 == 0:
+                split_nodes.append(TextNode(children[i], "text"))
+            # The second child node contains special formatting
+            else:
+                split_nodes.append(TextNode(children[i], text_type))
 
-
+        new_nodes.extend(split_nodes)
     return new_nodes
 
 
@@ -130,3 +64,69 @@ def extract_markdown_links(text):
 
     link_data = re.findall(r"\[(.*?)\]\((.*?)\)", text)
     return list(link_data)
+
+
+
+def split_nodes_image(old_nodes):
+    new_nodes = []
+
+    # Check if the child starts with an image (used later)
+    image_at_slice_start = lambda text: True if text.startswith("![") else False    
+
+    for node in old_nodes:
+        node_type = node.text_type
+        node_text = node.text
+        extracted_images = extract_markdown_images(node_text)
+
+        split_nodes = []
+        
+        if not extracted_images:
+            split_nodes.append(node)
+        else:
+            # To avoid looping over the same node multiple times due to multiple indices, use slicing to skip formatted text
+            # Create an index to be used in slicing
+            starting_index = 0          
+            for image in extracted_images:
+                # Each image consists of 5 markup characters, its text and URL - calculate length to be used in slicing
+                image_length = 5 + len(image[0]) + len(image[1])
+
+                # Slice the node starting from the last known index to the image (te rest is discarded)
+                children = node_text[starting_index:].split(f"![{image[0]}]({image[1]})", maxsplit=1)
+
+                #If there is only 1 extracted image, append both parts at the same time, since there is only 1 iteration
+                if len(extracted_images) == 1:
+                    for child in children:
+                        if child:
+                            if image_at_slice_start(node_text[starting_index:]) == True:
+                                split_nodes.append(TextNode(image[0], "image", image[1]))
+                                starting_index += image_length
+                                split_nodes.append(TextNode(child, node_type))
+                                starting_index += len(child)
+                            else:
+                                split_nodes.append(TextNode(child, node_type))
+                                starting_index += len(child)
+                                split_nodes.append(TextNode(image[0], "image", image[1]))
+                                starting_index += image_length
+                else:
+                    for child in children:
+                        if child:
+                            # If the slice starts with an image, add the image to new nodes and increase the starting index by image data length
+                            if image_at_slice_start(node_text[starting_index:]) == True:
+                                split_nodes.append(TextNode(image[0], "image", image[1]))
+                                starting_index += image_length
+                            # Otherwise, add the child data and increase the starting index by child data length
+                            else:
+                                split_nodes.append(TextNode(child, node_type))
+                                starting_index += len(child)
+
+            # Don't forget to slice the remaining text after the last split
+            if starting_index != len(node_text):
+                remainder = node_text[starting_index:]
+                if image_at_slice_start(remainder):
+                    split_nodes.append(TextNode(image[0], "image", image[1]))
+                else:
+                    split_nodes.append(TextNode(child, node_type))
+            else:
+                pass
+        new_nodes.extend(split_nodes)   
+    return new_nodes
