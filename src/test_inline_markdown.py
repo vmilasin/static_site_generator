@@ -1,6 +1,6 @@
 import unittest
 
-from inline_markdown import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_image
+from inline_markdown import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link
 from textnode import TextNode
 
 
@@ -171,3 +171,53 @@ class TestInlineMarkdownImageSplit(unittest.TestCase):
             TextNode("image", "image", "https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/zjjcJKZ.png"),
         ]
         self.assertListEqual(split_nodes_image([node]), desired_result)
+
+
+class TestInlineMarkdownLinkSplit(unittest.TestCase):
+    def test_split_link_one_trailing(self):
+        node = TextNode("This is text with a [link](https://www.google.com)", "text")
+        desired_result = [
+            TextNode("This is text with a ", "text"),
+            TextNode("link", "link", "https://www.google.com"),
+        ]
+        self.assertListEqual(split_nodes_link([node]), desired_result)
+
+    def test_split_link_one_leading(self):
+        node = TextNode("[link](https://www.google.com) This is text with a link", "text")
+        desired_result = [            
+            TextNode("link", "link", "https://www.google.com"),
+            TextNode(" This is text with a link", "text"),
+        ]
+        self.assertListEqual(split_nodes_link([node]), desired_result)
+
+    def test_split_link_multiple_end_with_image(self):
+        node = TextNode("[link](https://www.google.com) This is text with a link [link](https://www.google.com)", "text")
+        desired_result = [            
+            TextNode("link", "link", "https://www.google.com"),
+            TextNode(" This is text with a link ", "text"),
+            TextNode("link", "link", "https://www.google.com"),
+        ]
+        self.assertListEqual(split_nodes_link([node]), desired_result)
+
+    def test_split_link_multiple_end_with_text(self):
+        node = TextNode("[link](https://www.google.com) This is text with a link [link](https://www.google.com) AND SOME MORE TEXT", "text")
+        desired_result = [            
+            TextNode("link", "link", "https://www.google.com"),
+            TextNode(" This is text with a link ", "text"),
+            TextNode("link", "link", "https://www.google.com"),
+            TextNode(" AND SOME MORE TEXT", "text"),
+        ]
+        self.assertListEqual(split_nodes_link([node]), desired_result)
+
+    def test_split_link_multiple_concurrent_images(self):
+        self.maxDiff = None
+        node = TextNode("[link](https://www.google.com) This is text with a link [link](https://www.google.com)[different](https://www.bing.com) and [lizardman_boss](https://www.facebook.com)", "text")
+        desired_result = [            
+            TextNode("link", "link", "https://www.google.com"),
+            TextNode(" This is text with a link ", "text"),
+            TextNode("link", "link", "https://www.google.com"),
+            TextNode("different", "link", "https://www.bing.com"),
+            TextNode(" and ", "text"),
+            TextNode("lizardman_boss", "link", "https://www.facebook.com"),
+        ]
+        self.assertListEqual(split_nodes_link([node]), desired_result)

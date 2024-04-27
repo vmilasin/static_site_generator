@@ -121,9 +121,73 @@ def split_nodes_image(old_nodes):
 
             # Don't forget to slice the remaining text after the last split
             if starting_index != len(node_text):
-                remainder = node_text[starting_index:]
-                if image_at_slice_start(remainder):
+                if image_at_slice_start(node_text[starting_index:]):
                     split_nodes.append(TextNode(image[0], "image", image[1]))
+                else:
+                    split_nodes.append(TextNode(child, node_type))
+            else:
+                pass
+        new_nodes.extend(split_nodes)   
+    return new_nodes
+
+
+
+def split_nodes_link(old_nodes):
+    new_nodes = []
+
+    # Check if the child starts with a link (used later)
+    link_at_slice_start = lambda text: True if text.startswith("[") else False    
+
+    for node in old_nodes:
+        node_type = node.text_type
+        node_text = node.text
+        extracted_links = extract_markdown_links(node_text)
+
+        split_nodes = []
+        
+        if not extracted_links:
+            split_nodes.append(node)
+        else:
+            # To avoid looping over the same node multiple times due to multiple indices, use slicing to skip formatted text
+            # Create an index to be used in slicing
+            starting_index = 0          
+            for link in extracted_links:
+                # Each link consists of 4 markup characters, its text and URL - calculate length to be used in slicing
+                link_length = 4 + len(link[0]) + len(link[1])
+
+                # Slice the node starting from the last known index to the link (te rest is discarded)
+                children = node_text[starting_index:].split(f"[{link[0]}]({link[1]})", maxsplit=1)
+
+                #If there is only 1 extracted link, append both parts at the same time, since there is only 1 iteration
+                if len(extracted_links) == 1:
+                    for child in children:
+                        if child:
+                            if link_at_slice_start(node_text[starting_index:]) == True:
+                                split_nodes.append(TextNode(link[0], "link", link[1]))
+                                starting_index += link_length
+                                split_nodes.append(TextNode(child, node_type))
+                                starting_index += len(child)
+                            else:
+                                split_nodes.append(TextNode(child, node_type))
+                                starting_index += len(child)
+                                split_nodes.append(TextNode(link[0], "link", link[1]))
+                                starting_index += link_length
+                else:
+                    for child in children:
+                        if child:
+                            # If the slice starts with a link, add the link to new nodes and increase the starting index by link data length
+                            if link_at_slice_start(node_text[starting_index:]) == True:
+                                split_nodes.append(TextNode(link[0], "link", link[1]))
+                                starting_index += link_length
+                            # Otherwise, add the child data and increase the starting index by child data length
+                            else:
+                                split_nodes.append(TextNode(child, node_type))
+                                starting_index += len(child)
+
+            # Don't forget to slice the remaining text after the last split
+            if starting_index != len(node_text):
+                if link_at_slice_start(node_text[starting_index:]):
+                    split_nodes.append(TextNode(link[0], "link", link[1]))
                 else:
                     split_nodes.append(TextNode(child, node_type))
             else:
