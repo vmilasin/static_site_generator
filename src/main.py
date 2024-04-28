@@ -1,10 +1,11 @@
-from inline_markdown import extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_delimiter, split_nodes_link
+from inline_markdown import extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_delimiter, split_nodes_link, text_to_textnodes
 from textnode import TextNode
 
 
 
 def main():
-    node = TextNode("[link](https://www.google.com) This is text with a link [link](https://www.google.com) AND SOME MORE TEXT", "text")
+    node = TextNode("[link](https://www.google.com) This is text with a link [link](https://www.google.com)[different](https://www.bing.com) and [lizardman_boss](https://www.facebook.com)", "text")
+    node2 = TextNode("[link](https://www.bing.com) This is text with a link [link](https://www.facebook.com) AND SOME MORE TEXT", "text")
     split_nodes_link([node])
 
 

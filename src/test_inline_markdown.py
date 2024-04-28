@@ -1,6 +1,6 @@
 import unittest
 
-from inline_markdown import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link
+from inline_markdown import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link, text_to_textnodes
 from textnode import TextNode
 
 
@@ -190,7 +190,7 @@ class TestInlineMarkdownLinkSplit(unittest.TestCase):
         ]
         self.assertListEqual(split_nodes_link([node]), desired_result)
 
-    def test_split_link_multiple_end_with_image(self):
+    def test_split_link_multiple_end_with_link(self):
         node = TextNode("[link](https://www.google.com) This is text with a link [link](https://www.google.com)", "text")
         desired_result = [            
             TextNode("link", "link", "https://www.google.com"),
@@ -209,7 +209,7 @@ class TestInlineMarkdownLinkSplit(unittest.TestCase):
         ]
         self.assertListEqual(split_nodes_link([node]), desired_result)
 
-    def test_split_link_multiple_concurrent_images(self):
+    def test_split_link_multiple_concurrent_links(self):
         self.maxDiff = None
         node = TextNode("[link](https://www.google.com) This is text with a link [link](https://www.google.com)[different](https://www.bing.com) and [lizardman_boss](https://www.facebook.com)", "text")
         desired_result = [            
@@ -221,3 +221,51 @@ class TestInlineMarkdownLinkSplit(unittest.TestCase):
             TextNode("lizardman_boss", "link", "https://www.facebook.com"),
         ]
         self.assertListEqual(split_nodes_link([node]), desired_result)
+
+
+
+class TestTextToTextnodes(unittest.TestCase):
+    def test_text_to_textnodes_image_only(self):
+        node = TextNode("This is text with an ![image](https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/zjjcJKZ.png)", "text")
+        desired_result = [
+            TextNode("This is text with an ", "text"),
+            TextNode("image", "image", "https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/zjjcJKZ.png"),
+        ]
+        self.assertListEqual(text_to_textnodes([node]), desired_result)
+
+    def test_text_to_textnodes_link_only(self):
+        node = TextNode("This is text with a [link](https://www.google.com)", "text")
+        desired_result = [
+            TextNode("This is text with a ", "text"),
+            TextNode("link", "link", "https://www.google.com"),
+        ]
+        self.assertListEqual(text_to_textnodes([node]), desired_result)
+
+    def test_text_to_textnodes_delimiter_only(self):
+        node = TextNode("This is text with a **bolded** word *and another italic* word", "text")
+        desired_result= [
+            TextNode("This is text with a ", "text"),
+            TextNode("bolded", "bold"),
+            TextNode(" word ", "text"),
+            TextNode("and another italic", "italic"),
+            TextNode(" word", "text"),
+        ]
+        self.assertListEqual(text_to_textnodes([node]), desired_result)
+
+    def test_text_to_textnodes_all(self):
+        self.maxDiff = None
+        node = TextNode("This is text with an image ![image](https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/zjjcJKZ.png), a **bolded** word *and another italic* word, ending with a link [link](https://www.google.com)!", "text")
+        desired_result= [
+            TextNode("This is text with an image ", "text"),
+            TextNode("image", "image", "https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/zjjcJKZ.png"),
+            TextNode(", a ", "text"),
+            TextNode("bolded", "bold"),
+            TextNode(" word ", "text"),
+            TextNode("and another italic", "italic"),
+            TextNode(" word, ending with a link ", "text"),
+            TextNode("link", "link", "https://www.google.com"),
+            TextNode("!", "text"),
+        ]
+        self.assertListEqual(text_to_textnodes([node]), desired_result)
+
+
