@@ -154,7 +154,6 @@ def split_nodes_link(old_nodes):
             links_added = 0 
 
             for link in extracted_links:
-                print(link)
                 # Each link consists of 5 markup characters, its text and URL - calculate length to be used in slicing
                 link_length = 4 + len(link[0]) + len(link[1])
 
@@ -164,7 +163,6 @@ def split_nodes_link(old_nodes):
                 children = node_text[starting_index:].split(f"[{link[0]}]({link[1]})", maxsplit=1)
 
                 for child in children:
-                    print(children)
                     if child:
                         # If there are same 2 concurrent links, just continue on a child that starts with the link markup
                         # Usually, when nodes start with an link, they return an empty string on splitting
@@ -190,7 +188,6 @@ def split_nodes_link(old_nodes):
             # that means that there's additonal node content left over after the last split, so append it to the results as-is
             if node_text[starting_index:]:
                 new_nodes.append(TextNode(node_text[starting_index:], node_type))
-    print(new_nodes)
     return new_nodes
 
 
