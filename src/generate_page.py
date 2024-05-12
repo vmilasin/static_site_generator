@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from block_markdown import markdown_to_html_node
 
 
@@ -34,3 +35,27 @@ def generate_page(from_path, template_path, dest_path):
         os.makedirs(dest_dir_path, exist_ok=True)
     to_file = open(dest_path, "w")
     to_file.write(template_data)
+
+
+def generate_pages_recursive(src_path_dir, template_path, dest_path_dir):    
+    # Check if the source directory is missing
+    if os.path.exists(src_path_dir):
+        # List the files in the source directory
+        dir_list = os.listdir(src_path_dir)
+
+        # Create file paths and copy files
+        for file in dir_list:
+            src_path = os.path.join(src_path_dir, file)
+            template_path = template_path
+            dest_path = os.path.join(dest_path_dir, file)
+
+            # If the source path is a folder, run the function recursively for all files in that folder
+            if os.path.isfile(src_path):
+                dest_path = Path(dest_path).with_suffix(".html")
+                generate_page(src_path, template_path, dest_path)
+            else:
+                generate_pages_recursive(src_path, template_path, dest_path)
+    
+    # Raise an error if the source directory is missing
+    else:
+        raise Exception("Source directory for content copy missing")

@@ -1,9 +1,7 @@
 import os, shutil
 from copy_static import copy_directory_content
-from generate_page import generate_page
+from generate_page import generate_pages_recursive
 
-from inline_markdown import split_nodes_image
-from textnode import TextNode
     
 dir_path_static = "./static"
 dir_path_public = "./public"
@@ -22,10 +20,6 @@ def main():
 
     # Generate a page from markdown
     print("Generating page...")
-    generate_page(
-        os.path.join(dir_path_content, "index.md"),
-        template_path,
-        os.path.join(dir_path_public, "index.html"),
-    )
+    generate_pages_recursive(dir_path_content, template_path, dir_path_public)
 
 main()
