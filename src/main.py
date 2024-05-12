@@ -1,25 +1,15 @@
-from block_markdown import markdown_to_blocks
-
-
+import os, shutil
+from copy_static import copy_directory_content   
+    
+dir_path_static = "./static"
+dir_path_public = "./public"
 
 def main():
-    md = """
-This is **bolded** paragraph
+    # Delete contents of the public folder and copy the contents from the static to public directory
+    if os.path.exists(dir_path_public):
+        shutil.rmtree(dir_path_public)
 
-
-
-
-This is another paragraph with *italic* text and `code` here
-This is the same paragraph on a new line
-
-* This is a list
-* with items
-"""
-
-    blocks = markdown_to_blocks(md)
-    for block in blocks:
-        print(block)
-
+    copy_directory_content(dir_path_static, dir_path_public)
 
 
 main()
