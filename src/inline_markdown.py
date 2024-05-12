@@ -94,32 +94,38 @@ def split_nodes_image(old_nodes):
                 # Each image consists of 5 markup characters, its text and URL - calculate length to be used in slicing
                 image_length = 5 + len(image[0]) + len(image[1])
 
-                # The node text is going to be split on a new starting index after each iteration
-                # If there is a image in the node, the starting index will be increased by the image length
-                # If there is something other than a image in the node before the image, the index will be increased by that data length
-                children = node_text[starting_index:].split(f"![{image[0]}]({image[1]})", maxsplit=1)
+                # If there's only a single image, return only it
+                if image_length == len(node_text):
+                    new_nodes.append(TextNode(image[0], "image", image[1]))
+                    starting_index += image_length
 
-                for child in children:
-                    if child:                        
-                        # If there are same 2 concurrent images, just continue on a child that starts with the image markup
-                        # Usually, when nodes start with an image, they return an empty string on splitting
-                        # Otherwise you might split the node twice on the same image and that will break your slicing
-                        if child_starts_with_image(child) and children[0] != "":
-                            continue
-                        
-                        # If the child is an empty string - that is the result of an image being split from the node, add it to the result
-                        # If the child starts with a non-empty string, append that part that comes before the image along with the image that follows it
-                        if children[0] != "":
-                            new_nodes.append(TextNode(child, node_type))
-                            starting_index += len(child)
-                        
-                        # If the ammount of added images is the same as the ammount of extracted images, skip adding an image node to
-                        # avoid duplication when the last node is a text node
-                        if images_added == len(extracted_images):
-                            continue
-                        new_nodes.append(TextNode(image[0], "image", image[1]))
-                        starting_index += image_length
-                        images_added += 1                        
+                else:
+                    # The node text is going to be split on a new starting index after each iteration
+                    # If there is a image in the node, the starting index will be increased by the image length
+                    # If there is something other than a image in the node before the image, the index will be increased by that data length
+                    children = node_text[starting_index:].split(f"![{image[0]}]({image[1]})", maxsplit=1)
+
+                    for child in children:
+                        if child:                        
+                            # If there are same 2 concurrent images, just continue on a child that starts with the image markup
+                            # Usually, when nodes start with an image, they return an empty string on splitting
+                            # Otherwise you might split the node twice on the same image and that will break your slicing
+                            if child_starts_with_image(child) and children[0] != "":
+                                continue
+                            
+                            # If the child is an empty string - that is the result of an image being split from the node, add it to the result
+                            # If the child starts with a non-empty string, append that part that comes before the image along with the image that follows it
+                            if children[0] != "":
+                                new_nodes.append(TextNode(child, node_type))
+                                starting_index += len(child)
+                            
+                            # If the ammount of added images is the same as the ammount of extracted images, skip adding an image node to
+                            # avoid duplication when the last node is a text node
+                            if images_added == len(extracted_images):
+                                continue
+                            new_nodes.append(TextNode(image[0], "image", image[1]))
+                            starting_index += image_length
+                            images_added += 1                        
 
             # Since we are splitting on extracted images - if the remaining slice contains anything other than an empty string,
             # that means that there's additonal node content left over after the last split, so append it to the results as-is
@@ -195,6 +201,7 @@ def split_nodes_link(old_nodes):
 
 
 def text_to_textnodes(text):
+    results = [TextNode(text, "text")]
     # Check the delimiters, and get the defined type
     valid_delimiters = ["*", "_", "~", "`"]   
     textnode_type = lambda delimiter: {
@@ -250,7 +257,7 @@ def text_to_textnodes(text):
             return used_delimiters   
        
     
-    results = split_nodes_image(text)
+    results = split_nodes_image(results)
     results = split_nodes_link(results)
 
     # Get a list of all text delimiters

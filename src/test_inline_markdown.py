@@ -226,23 +226,23 @@ class TestInlineMarkdownLinkSplit(unittest.TestCase):
 
 class TestTextToTextnodes(unittest.TestCase):
     def test_text_to_textnodes_image_only(self):
-        node = TextNode("This is text with an ![image](https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/zjjcJKZ.png)", "text")
+        node = "This is text with an ![image](https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/zjjcJKZ.png)"
         desired_result = [
             TextNode("This is text with an ", "text"),
             TextNode("image", "image", "https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/zjjcJKZ.png"),
         ]
-        self.assertListEqual(text_to_textnodes([node]), desired_result)
+        self.assertListEqual(text_to_textnodes(node), desired_result)
 
     def test_text_to_textnodes_link_only(self):
-        node = TextNode("This is text with a [link](https://www.google.com)", "text")
+        node = "This is text with a [link](https://www.google.com)"
         desired_result = [
             TextNode("This is text with a ", "text"),
             TextNode("link", "link", "https://www.google.com"),
         ]
-        self.assertListEqual(text_to_textnodes([node]), desired_result)
+        self.assertListEqual(text_to_textnodes(node), desired_result)
 
     def test_text_to_textnodes_delimiter_only(self):
-        node = TextNode("This is text with a **bolded** word *and another italic* word", "text")
+        node = "This is text with a **bolded** word *and another italic* word"
         desired_result= [
             TextNode("This is text with a ", "text"),
             TextNode("bolded", "bold"),
@@ -250,11 +250,11 @@ class TestTextToTextnodes(unittest.TestCase):
             TextNode("and another italic", "italic"),
             TextNode(" word", "text"),
         ]
-        self.assertListEqual(text_to_textnodes([node]), desired_result)
+        self.assertListEqual(text_to_textnodes(node), desired_result)
 
     def test_text_to_textnodes_all(self):
         self.maxDiff = None
-        node = TextNode("This is text with an image ![image](https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/zjjcJKZ.png), a **bolded** word *and another italic* word, ending with a link [link](https://www.google.com)!", "text")
+        node = "This is text with an image ![image](https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/zjjcJKZ.png), a **bolded** word *and another italic* word, ending with a link [link](https://www.google.com)!"
         desired_result= [
             TextNode("This is text with an image ", "text"),
             TextNode("image", "image", "https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/zjjcJKZ.png"),
@@ -266,7 +266,7 @@ class TestTextToTextnodes(unittest.TestCase):
             TextNode("link", "link", "https://www.google.com"),
             TextNode("!", "text"),
         ]
-        self.assertListEqual(text_to_textnodes([node]), desired_result)
+        self.assertListEqual(text_to_textnodes(node), desired_result)
 
 
 if __name__ == "__main__":
